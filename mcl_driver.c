@@ -118,7 +118,6 @@ static void reset_driver(){
   /* -- stage 1: disable the machine and interrupts until reset is complete */
   clear_csr(mie, MIP_MEIP);
   clear_csr(mie, MIP_MTIP);
-
   for( i=0; i<PLIC_NUM_INTERRUPTS; i++ ){
     g_ext_interrupt_handlers[i] = no_interrupt_handler;
   }
@@ -139,21 +138,30 @@ static void reset_driver(){
   GPIO_REG(GPIO_RISE_IE) |= (1 << BUTTON_0_OFFSET);
 #endif
 
-  /* -- stage 5: enable the machine external bits & timers */
-  set_csr(mie, MIP_MEIP);
-  set_csr(mie, MIP_MTIP);
-  set_csr(mstatus, MSTATUS_MIE);
+  volatile uint64_t * mtime       = (uint64_t*) (CLINT_BASE_ADDR + CLINT_MTIME);
+  volatile uint64_t * mtimecmp    = (uint64_t*) (CLINT_BASE_ADDR + CLINT_MTIMECMP);
+  uint64_t now = *mtime;
+  uint64_t then = now + 1.5*RTC_FREQUENCY;
+  *mtimecmp = then;
 
-  /* -- stage 6: init the registers */
+  /* -- stage 5: init the registers */
   __REG[MCL_CUB_REG]    = (uint64_t)(MCL_CUB);
   __REG[MCL_BLOCK_REG]  = (uint64_t)(MCL_MAX_BLOCK_SZ);
 
   __STOR = malloc( sizeof( uint8_t ) * MCL_SIZE );
+  if( __STOR == NULL ){
+    exit(0xF);
+  }
 
-  /* -- stage 7: init the backing memory */
+  /* -- stage 6: init the backing memory */
   for( m=0; m<MCL_SIZE; m++ ){
     __STOR[m] = 0x0;
   }
+
+  /* -- stage 7: enable the machine external bits & timers */
+  set_csr(mie, MIP_MEIP);
+  set_csr(mie, MIP_MTIP);
+  set_csr(mstatus, MSTATUS_MIE);
 }
 
 /* ---------------------------------------------------- MAIN */

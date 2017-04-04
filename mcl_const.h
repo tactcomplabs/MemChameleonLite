@@ -60,9 +60,9 @@
  *
  * Sample Storage:
  *  - device -   : - Sz - : - Sz in hex -
- * Digilent Arty : 200MB  : 0xC800000
+ * Digilent Arty : 6KB : 0x1800
  */
-#define MCL_SIZE        0xC800000
+#define MCL_SIZE        0x1800
 
 /*
  * MCL_MAX_PACKET_SIZE
